@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -36,8 +37,11 @@ def sample_data():
 
 @pytest.fixture
 def repo(sample_data):
-    loader = Mock(return_value=sample_data)
-    return RecipeRepository(load_json_callable=loader)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(sample_data, f)
+        temp_path = f.name
+    yield RecipeRepository(temp_path)
+    os.unlink(temp_path)
 
 
 class WhenValidatingJsonResponseFormatTests:
@@ -69,27 +73,32 @@ class WhenValidatingJsonResponseFormatTests:
 
     def test_that_empty_results_should_be_empty_list_or_empty_dict_consistently_test(self):
         # Use empty dataset for this test
-        loader = Mock(return_value=[])
-        empty_repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump([], f)
+            temp_path = f.name
+        try:
+            empty_repo = RecipeRepository(temp_path)
 
-        # Test methods that return lists
-        list_methods = [
-            lambda: empty_repo.get_all_categories(),
-            lambda: empty_repo.get_categories_with_subcategories(),
-            lambda: empty_repo.get_subcategories_by_category("nonexistent"),
-            lambda: empty_repo.get_recipes_by_category("nonexistent"),
-            lambda: empty_repo.get_recipes_by_tag("nonexistent"),
-            lambda: empty_repo.get_recipes_by_name("nonexistent"),
-            lambda: empty_repo.get_recipes_by_dependency("nonexistent")
-        ]
+            # Test methods that return lists
+            list_methods = [
+                lambda: empty_repo.get_all_categories(),
+                lambda: empty_repo.get_categories_with_subcategories(),
+                lambda: empty_repo.get_subcategories_by_category("nonexistent"),
+                lambda: empty_repo.get_recipes_by_category("nonexistent"),
+                lambda: empty_repo.get_recipes_by_tag("nonexistent"),
+                lambda: empty_repo.get_recipes_by_name("nonexistent"),
+                lambda: empty_repo.get_recipes_by_dependency("nonexistent")
+            ]
 
-        for method in list_methods:
-            result = method()
-            assert result == []
+            for method in list_methods:
+                result = method()
+                assert result == []
 
-        # Test method that returns dict
-        result = empty_repo.get_recipe_by_id("nonexistent")
-        assert result == {}
+            # Test method that returns dict
+            result = empty_repo.get_recipe_by_id("nonexistent")
+            assert result == {}
+        finally:
+            os.unlink(temp_path)
 
     def test_that_recipe_objects_should_contain_expected_fields_test(self, repo):
         result = repo.get_recipes_by_category("spring")
@@ -133,12 +142,17 @@ class WhenValidatingJsonResponseFormatTests:
                 "dependency": f"dep_{i}"
             })
 
-        loader = Mock(return_value=large_data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(large_data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        result = repo.get_recipes_by_category("test")
-        assert len(result) == 1000
+            result = repo.get_recipes_by_category("test")
+            assert len(result) == 1000
 
-        # Should not raise exception even with large data
-        json_str = json.dumps(result)
-        assert len(json_str) > 0
+            # Should not raise exception even with large data
+            json_str = json.dumps(result)
+            assert len(json_str) > 0
+        finally:
+            os.unlink(temp_path)

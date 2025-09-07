@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -48,8 +49,11 @@ def sample_data():
 
 @pytest.fixture
 def repo(sample_data):
-    loader = Mock(return_value=sample_data)
-    return RecipeRepository(load_json_callable=loader)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(sample_data, f)
+        temp_path = f.name
+    yield RecipeRepository(temp_path)
+    os.unlink(temp_path)
 
 
 class WhenFetchRecipesByCategoryAndSubcategoryTests:

@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -48,8 +49,11 @@ def sample_data():
 
 @pytest.fixture
 def repo(sample_data):
-    loader = Mock(return_value=sample_data)
-    return RecipeRepository(load_json_callable=loader)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(sample_data, f)
+        temp_path = f.name
+    yield RecipeRepository(temp_path)
+    os.unlink(temp_path)
 
 
 class WhenFetchSubcategoriesByCategoryTests:
@@ -85,10 +89,15 @@ class WhenFetchSubcategoriesByCategoryTests:
             {"category": "spring", "sub-category": "jdbc"},  # duplicate
             {"category": "spring", "sub-category": "web"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_subcategories_by_category("spring")
-        assert result == ["jdbc", "web"]
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_subcategories_by_category("spring")
+            assert result == ["jdbc", "web"]
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_subcategories_should_handle_recipes_without_subcategory_test(self):
         data = [
@@ -96,20 +105,30 @@ class WhenFetchSubcategoriesByCategoryTests:
             {"category": "spring"},  # no subcategory
             {"category": "testing", "sub-category": "junit"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_subcategories_by_category("spring")
-        assert result == ["jdbc"]
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_subcategories_by_category("spring")
+            assert result == ["jdbc"]
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_subcategories_should_normalize_case_test(self):
         data = [
             {"category": "Spring", "sub-category": "JDBC"},
             {"category": "Spring", "sub-category": "Web"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_subcategories_by_category("spring")
-        assert result == ["jdbc", "web"]
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_subcategories_by_category("spring")
+            assert result == ["jdbc", "web"]
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_subcategories_with_very_long_category_should_return_empty_list_test(self, repo):
         result = repo.get_subcategories_by_category("x" * 10000)

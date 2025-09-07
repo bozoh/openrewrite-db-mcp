@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -48,8 +49,11 @@ def sample_data():
 
 @pytest.fixture
 def repo(sample_data):
-    loader = Mock(return_value=sample_data)
-    return RecipeRepository(load_json_callable=loader)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(sample_data, f)
+        temp_path = f.name
+    yield RecipeRepository(temp_path)
+    os.unlink(temp_path)
 
 
 class WhenFetchRecipeByIdTests:
@@ -98,20 +102,30 @@ class WhenFetchRecipeByIdTests:
             {"name": "Recipe 1", "id": "recipe1"},
             {"name": "Recipe 2"}  # no id
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipe_by_id("recipe1")
-        assert result["name"] == "Recipe 1"
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipe_by_id("recipe1")
+            assert result["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_recipe_by_id_should_handle_non_string_ids_test(self):
         data = [
             {"name": "Recipe 1", "id": "recipe1"},
             {"name": "Recipe 2", "id": 123}  # non-string id
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipe_by_id("recipe1")
-        assert result["name"] == "Recipe 1"
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipe_by_id("recipe1")
+            assert result["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_recipe_by_id_with_very_long_id_should_return_empty_json_test(self, repo):
         result = repo.get_recipe_by_id("x" * 10000)
@@ -122,7 +136,12 @@ class WhenFetchRecipeByIdTests:
             {"name": "Recipe 1", "id": "duplicate"},
             {"name": "Recipe 2", "id": "duplicate"}  # duplicate id
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipe_by_id("duplicate")
-        assert result["name"] == "Recipe 1"  # Should return first match
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipe_by_id("duplicate")
+            assert result["name"] == "Recipe 1"  # Should return first match
+        finally:
+            os.unlink(temp_path)
