@@ -94,3 +94,34 @@ exemplo de receita correta:
         "mvn-command-line": "mvn -U org.openrewrite.maven:rewrite-maven-plugin:run -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-migrate-java:RELEASE -Drewrite.activeRecipes=org.openrewrite.java.migrate.lombok.LombokValueToRecord -Drewrite.exportDatatables=true"
     },
 ```
+
+
+AInda não está processando tudo, vamos tentar uma outra abordagem.
+* ao invés de tentar pegar todos os links do arquivo recipes.html,  tente pegar todas as pastas e sub-pastas dentro de resource/docs.openrewrite.org/recipes,  e para cada pasta,  pegue todos os arquivos html dentro dela,  e processe cada arquivo html individualmente 
+* Não é necessário pegar os htmls da pasta resource/docs.openrewrite.org/recipes,  apenas das sub-pastas.
+* Não é necessário mais process´ar os links dos arquivos html,  apenas extrair os dados do arquivo html.
+* Se a categoria e a sub-categoria forem iguais, coloque null nas sub-categoria.
+
+
+
+
+Vôce é um agente perito em extração de dado de arquivos html usando python .
+
+analise o arquivo  `extract_recipes.py`  e o modifique para acrescentar um id único para cada receita extraída,  o id deve ser um hash md5 do campo `name` + `category` + `sub-category`,  o id deve ser salvo no campo `id` no JSON.:
+
+```json
+[
+    {
+        "id": "<ID ÚNICO>",
+        "name": "<NOME DA RECEITA>",
+        "category": "<CATEGORIA DA RECEITA>",
+        "sub-category": "<SUB-CATEGORIA DA RECEITA>",
+        "tags": ["<TAG1>", "<TAG2>"],
+        "description": "<DESCRIÇÃO DA RECEITA>",
+        "link": "<LINK DA RECEITA>",
+        "package": "<PACKAGE DA RECEITA>",
+        "dependency": "<PACKAGE DA DEPENDÊCIA DA RECEITA>",
+        "mvn-command-line": "<MAVE COMMAND LINE>"
+       },
+]
+```

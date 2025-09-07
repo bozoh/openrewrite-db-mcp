@@ -2,6 +2,7 @@ import os
 import json
 from bs4 import BeautifulSoup
 import re
+import hashlib
 
 def extract_recipes():
     base_path = "resource/docs.openrewrite.org"
@@ -163,6 +164,10 @@ def extract_recipes():
                                 # Add category and subcategory info
                                 recipe_data["category"] = category
                                 recipe_data["sub-category"] = sub_category
+
+                                # Generate unique ID
+                                id_string = f"{recipe_data['name']}{recipe_data['category']}{recipe_data['sub-category'] or ''}"
+                                recipe_data["id"] = hashlib.md5(id_string.encode()).hexdigest()
 
                                 # Create tags
                                 tags = []
