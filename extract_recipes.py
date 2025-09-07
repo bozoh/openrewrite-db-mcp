@@ -1,58 +1,47 @@
 import os
 import json
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
 import re
 
 def extract_recipes():
     base_path = "resource/docs.openrewrite.org"
     recipes_file = "resource/db/recipes.json"
     recipes = []
-    processed_recipes = set()
+    processed_files = set()
     category_counts = {}
 
-    def parse_recipe_page(recipe_path, category, sub_category):
-        """Parse individual recipe page and extract data"""
+    def parse_recipe_file(recipe_path):
+        """Parse individual recipe HTML file and extract data"""
         try:
             with open(recipe_path, 'r', encoding='utf-8') as f:
                 soup = BeautifulSoup(f.read(), 'html.parser')
 
-            # Extract name from specific xpath: /html/body/div[1]/div[3]/div/div/main/div/div/div/div/article/div[2]/header/h1
+            # Extract name from title or h1
             name = "Unknown"
-            try:
-                header_h1 = soup.select_one('body > div:nth-of-type(1) > div:nth-of-type(3) > div > div > main > div > div > div > div > article > div:nth-of-type(2) > header > h1')
-                if header_h1:
-                    name = header_h1.get_text().strip()
-            except:
-                # Fallback to title or h1
-                title = soup.find('title')
-                if title:
-                    name = title.get_text().strip().replace(' | OpenRewrite Docs', '')
-                else:
-                    h1 = soup.find('h1')
-                    if h1:
-                        name = h1.get_text().strip()
+            title = soup.find('title')
+            if title:
+                name = title.get_text().strip().replace(' | OpenRewrite Docs', '')
+            else:
+                h1 = soup.find('h1')
+                if h1:
+                    name = h1.get_text().strip()
 
-            # Extract description from specific xpath: //html/body/div[1]/div[3]/div/div/main/div/div/div/div/article/div[2]/p[2]/em
+            # Extract description from meta description or first paragraph
             description = ""
-            try:
-                desc_em = soup.select_one('body > div:nth-of-type(1) > div:nth-of-type(3) > div > div > main > div > div > div > div > article > div:nth-of-type(2) > p:nth-of-type(2) > em')
-                if desc_em:
-                    description = desc_em.get_text().strip()
-            except:
-                # Fallback to meta description or first paragraph
-                meta_desc = soup.find('meta', attrs={'name': 'description'})
-                if meta_desc:
-                    description = meta_desc.get('content', '').strip()
-                else:
-                    h1 = soup.find('h1')
-                    if h1:
-                        next_p = h1.find_next('p')
-                        if next_p:
-                            description = next_p.get_text().strip()
+            meta_desc = soup.find('meta', attrs={'name': 'description'})
+            if meta_desc:
+                description = meta_desc.get('content', '').strip()
+            else:
+                # Try to find description in the content
+                h1 = soup.find('h1')
+                if h1:
+                    next_p = h1.find_next('p')
+                    if next_p:
+                        description = next_p.get_text().strip()
 
             # Extract Maven command line
             mvn_command = None
+
             # Look for Maven Command Line tab content
             tabs = soup.find_all('div', class_='tabItem_Ymn6')
             for tab in tabs:
@@ -65,7 +54,7 @@ def extract_recipes():
                             mvn_command = code.get_text().strip()
                     break
 
-            # If not found in tabs, try to find any mvn command
+            # If not found in tabs, try to find any mvn command in pre blocks
             if not mvn_command:
                 pre_blocks = soup.find_all('pre')
                 for pre in pre_blocks:
@@ -106,163 +95,110 @@ def extract_recipes():
                             dependency = package
                             break
 
-            # Tags: default to category and sub-category
-            tags = []
-            if category:
-                tags.append(category)
-            if sub_category:
-                tags.append(sub_category)
-
-            # Link: complete URL with https://docs.openrewrite.org/
-            relative_path = recipe_path.replace(base_path + '/', '')
-            link = f"https://docs.openrewrite.org/{relative_path}"
-
-            recipe_data = {
+            return {
                 "name": name,
-                "category": category,
-                "sub-category": sub_category,
-                "tags": tags,
                 "description": description,
-                "link": link,
                 "package": package,
                 "dependency": dependency,
                 "mvn-command-line": mvn_command
             }
 
-            return recipe_data
-
         except Exception as e:
             print(f"Error parsing {recipe_path}: {e}")
             return None
 
-    def parse_category_page(category_path, category_name, current_sub_category=""):
-        """Parse category page and find sub-categories or recipes recursively"""
+    def determine_category_and_subcategory(file_path):
+        """Determine category and subcategory from file path"""
+        # Remove base path and get relative path
+        rel_path = file_path.replace(base_path + '/', '')
+
+        # Split path into parts
+        path_parts = rel_path.split('/')
+
+        # Remove 'recipes' from the beginning if present
+        if path_parts[0] == 'recipes':
+            path_parts = path_parts[1:]
+
+        # Category is the first folder
+        category = path_parts[0] if len(path_parts) > 1 else None
+
+        # Sub-category is everything between category and filename
+        if len(path_parts) > 2:
+            sub_category_parts = path_parts[1:-1]  # Everything except first and last
+            sub_category = '/'.join(sub_category_parts)
+
+            # If sub-category has the same name as category, set to null
+            if sub_category == category:
+                sub_category = None
+        else:
+            sub_category = None
+
+        return category, sub_category
+
+    def process_directory(directory_path):
+        """Process all HTML files in a directory recursively"""
         try:
-            with open(category_path, 'r', encoding='utf-8') as f:
-                soup = BeautifulSoup(f.read(), 'html.parser')
-
-            # Find all links in the main content
-            content = soup.find('main')
-            if not content:
-                return
-
-            links = content.find_all('a', href=True)
-            for link in links:
-                href = link['href']
-                if href.startswith('../') or href.startswith('http'):
+            for root, dirs, files in os.walk(directory_path):
+                # Skip the root recipes directory
+                if root == os.path.join(base_path, 'recipes'):
                     continue
 
-                # Convert relative links to absolute paths
-                if href.startswith('./'):
-                    href = href[2:]
-                elif href.startswith('recipes/'):
-                    pass
-                else:
-                    href = f"recipes/{href}"
+                for file in files:
+                    if file.endswith('.html') and not file.endswith('README.html'):
+                        file_path = os.path.join(root, file)
 
-                full_path = os.path.join(base_path, href)
+                        # Skip if already processed
+                        if file_path in processed_files:
+                            continue
 
-                if os.path.exists(full_path):
-                    if href.endswith('.html') and not href.endswith('README.html'):
-                        # Check if it's a recipe page (has recipe content)
-                        try:
-                            with open(full_path, 'r', encoding='utf-8') as f:
-                                page_soup = BeautifulSoup(f.read(), 'html.parser')
-                                # Check if it has recipe-specific content
-                                if page_soup.find('title') and 'OpenRewrite Docs' in page_soup.find('title').get_text():
-                                    # Determine sub-category from path
-                                    path_parts = href.replace('recipes/', '').replace('.html', '').split('/')
-                                    recipe_name = path_parts[-1]
+                        # Determine category and subcategory
+                        category, sub_category = determine_category_and_subcategory(file_path)
 
-                                    # Build sub-category path
-                                    if len(path_parts) > 1:
-                                        sub_cat_parts = path_parts[:-1]  # All parts except the last (recipe name)
-                                        if current_sub_category:
-                                            sub_cat_parts = [current_sub_category] + sub_cat_parts
-                                        sub_cat = '/'.join(sub_cat_parts)
-                                    else:
-                                        sub_cat = current_sub_category if current_sub_category else None
+                        if category:
+                            print(f"Processing: {file} (category: {category}, sub-category: {sub_category})")
 
-                                    # Skip if already processed
-                                    if recipe_name in processed_recipes:
-                                        continue
+                            # Parse the recipe
+                            recipe_data = parse_recipe_file(file_path)
+                            if recipe_data:
+                                # Add category and subcategory info
+                                recipe_data["category"] = category
+                                recipe_data["sub-category"] = sub_category
 
-                                    print(f"Processing recipe: {recipe_name} (category: {category_name}, sub-category: {sub_cat})")
-                                    recipe_data = parse_recipe_page(full_path, category_name, sub_cat)
-                                    if recipe_data:
-                                        recipes.append(recipe_data)
-                                        processed_recipes.add(recipe_name)
+                                # Create tags
+                                tags = []
+                                if category:
+                                    tags.append(category)
+                                if sub_category:
+                                    tags.append(sub_category)
+                                recipe_data["tags"] = tags
 
-                                        # Update category count
-                                        cat_key = category_name
-                                        if sub_cat:
-                                            cat_key += f"/{sub_cat}"
-                                        category_counts[cat_key] = category_counts.get(cat_key, 0) + 1
+                                # Create link
+                                relative_path = file_path.replace(base_path + '/', '')
+                                recipe_data["link"] = f"https://docs.openrewrite.org/{relative_path}"
 
-                        except Exception as e:
-                            print(f"Error checking {full_path}: {e}")
-                    elif href.endswith('/') or (not href.endswith('.html') and os.path.isdir(full_path)):
-                        # This might be a sub-category directory
-                        sub_dir_name = href.rstrip('/')
-                        if '/' in sub_dir_name:
-                            sub_dir_name = sub_dir_name.split('/')[-1]
+                                recipes.append(recipe_data)
+                                processed_files.add(file_path)
 
-                        # Build the sub-category path
-                        new_sub_category = sub_dir_name
-                        if current_sub_category:
-                            new_sub_category = f"{current_sub_category}/{sub_dir_name}"
-
-                        # Look for index.html in the sub-directory
-                        index_path = os.path.join(full_path, 'index.html')
-                        if os.path.exists(index_path):
-                            print(f"Processing sub-category: {category_name}/{new_sub_category}")
-                            parse_category_page(index_path, category_name, new_sub_category)
+                                # Update category count
+                                cat_key = category
+                                if sub_category:
+                                    cat_key += f"/{sub_category}"
+                                category_counts[cat_key] = category_counts.get(cat_key, 0) + 1
 
         except Exception as e:
-            print(f"Error parsing category {category_path}: {e}")
-
-    def parse_main_page():
-        """Parse main recipes page to find categories"""
-        main_path = os.path.join(base_path, "recipes", "recipes.html")
-        if not os.path.exists(main_path):
-            print(f"Main recipes file not found: {main_path}")
-            return
-
-        try:
-            with open(main_path, 'r', encoding='utf-8') as f:
-                soup = BeautifulSoup(f.read(), 'html.parser')
-
-            # Find category links
-            links = soup.find_all('a', href=True)
-            print(f"Found {len(links)} links in main page")
-            category_count = 0
-            for link in links:
-                href = link['href']
-                # Look for category links that are direct HTML files (not starting with http or ../)
-                if (not href.startswith('http') and
-                    not href.startswith('../') and
-                    not href.startswith('recipes.html') and
-                    href.endswith('.html') and
-                    not href.endswith('README.html') and
-                    '/' not in href):  # Direct category files like ai.html, java.html
-                    category_name = href.replace('.html', '')
-                    category_path = os.path.join(base_path, 'recipes', href)
-
-                    if os.path.exists(category_path):
-                        print(f"Processing category: {category_name}")
-                        category_count += 1
-                        parse_category_page(category_path, category_name)
-
-            print(f"Total categories processed: {category_count}")
-
-        except Exception as e:
-            print(f"Error parsing main page: {e}")
+            print(f"Error processing directory {directory_path}: {e}")
 
     # Start processing
-    print("Starting recipe extraction...")
-    parse_main_page()
+    print("Starting recipe extraction using file system approach...")
 
-    # Filter out recipes without mvn-command-line
+    recipes_dir = os.path.join(base_path, 'recipes')
+    if os.path.exists(recipes_dir):
+        process_directory(recipes_dir)
+    else:
+        print(f"Recipes directory not found: {recipes_dir}")
+        return
+
+    # Filter out recipes without mvn-command-line (shouldn't happen but just in case)
     recipes = [r for r in recipes if r.get('mvn-command-line')]
 
     # Save to JSON
