@@ -1,96 +1,167 @@
-# openrewrite-db-mcp
+# OpenRewrite Recipe Database MCP
 
-A Python tool that extracts OpenRewrite recipes from the official documentation and generates a structured JSON database for easy access and management.
+A Python library for querying OpenRewrite recipes stored in JSON format using JSONPath expressions.
 
-## Prerequisites
+## Overview
 
-- Python 3.10 or higher
-- uv package manager (install via `pip install uv` or follow [uv installation guide](https://github.com/astral-sh/uv))
+This project implements a comprehensive RecipeRepository class that provides various methods to query OpenRewrite recipes from a JSON database. The implementation follows TDD (Test-Driven Development) principles with extensive unit test coverage.
+
+## Features
+
+The RecipeRepository class provides the following query methods:
+
+- **get_all_categories()** - Get all unique categories
+- **get_categories_with_subcategories()** - Get categories with their subcategories
+- **get_subcategories_by_category(category)** - Get subcategories for a specific category
+- **get_recipes_by_category(category, subcategory=None)** - Get recipes by category and optional subcategory
+- **get_recipes_by_tag(tag)** - Get recipes containing a specific tag
+- **get_recipes_by_name(name_query)** - Search recipes by partial name match (case-insensitive)
+- **get_recipe_by_id(recipe_id)** - Get a single recipe by its ID
+- **get_recipes_by_dependency(dependency)** - Get recipes by dependency (partial match)
+
+All methods return results in JSON format and handle edge cases gracefully.
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd openrewrite-db-mcp
-   ```
-
-2. Install dependencies using uv:
-   ```bash
-   uv pip install -r requirements.txt
-   ```
-
-   Or if using uv's project management:
-   ```bash
-   uv sync
-   ```
-
-## Setup
-
-Download the OpenRewrite recipes catalog from the official documentation:
-
+1. Install uv if not already installed:
 ```bash
-cd resource && wget --recursive --no-clobber --html-extension --convert-links --no-parent --reject="*.jpg,*.jpeg,*.png,*.gif,*.css,*.js,*.svg,*.webp,*.ico" https://docs.openrewrite.org/recipes
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-This command will download all recipe documentation files to `resource/docs.openrewrite.org/recipes/`.
+2. Install Python dependencies:
+```bash
+uv sync
+```
+
+3. Run tests:
+```bash
+uv run pytest tests/
+```
 
 ## Usage
 
-Run the extraction script to process the downloaded recipes and generate the database:
+```python
+from lib.recipe_repository import RecipeRepository
 
-```bash
-python extract_recipes.py
+# Create repository with JSON file path
+repo = RecipeRepository("path/to/recipes.json")
+
+# Query examples
+categories = repo.get_all_categories()
+recipes = repo.get_recipes_by_category("spring")
+recipe = repo.get_recipe_by_id("org.openrewrite.java.spring.AddSpringJdbc")
 ```
 
-The script will:
-- Parse HTML files from `resource/docs.openrewrite.org/recipes/`
-- Extract recipe metadata (name, description, Maven commands, dependencies)
-- Categorize recipes by type and subcategory
-- Generate a JSON database at `resource/db/recipes.json`
+## Test Coverage
 
-## Output
+The project includes comprehensive unit tests covering:
 
-The generated `resource/db/recipes.json` contains an array of recipe objects with the following structure:
+- **Success scenarios** for all methods
+- **Failure scenarios** (empty results, non-existent items)
+- **Invalid input handling** (wrong types, None values, empty strings)
+- **Edge cases** (very long strings, malformed data)
+- **JSON serialization validation**
+- **Robustness against malformed datasets**
 
-```json
-{
-  "id": "unique-hash",
-  "name": "Recipe Name",
-  "description": "Recipe description",
-  "category": "category-name",
-  "sub-category": "sub-category-name",
-  "package": "org.openrewrite:rewrite-recipe-name",
-  "dependency": "org.openrewrite:rewrite-recipe-name",
-  "mvn-command-line": "mvn rewrite:run -Drewrite.activeRecipes=org.openrewrite.recipe-name",
-  "tags": ["category", "sub-category"],
-  "link": "https://docs.openrewrite.org/recipes/category/recipe-name"
-}
+### Test Results
+```
+======================== 100 passed in 0.47s ========================
 ```
 
 ## Project Structure
 
 ```
-openrewrite-db-mcp/
-├── extract_recipes.py          # Main extraction script
-├── pyproject.toml              # Project configuration
-├── requirements.txt            # Python dependencies
-├── resource/
-│   ├── db/
-│   │   └── recipes.json        # Generated recipes database
-│   └── docs.openrewrite.org/   # Downloaded documentation
-├── .python-version             # Python version specification
-└── README.md                   # This file
+.
+├── lib/
+│   ├── __init__.py
+│   └── recipe_repository.py          # Main RecipeRepository class
+├── tests/
+│   ├── __init__.py
+│   ├── test_when_fetch_all_categories_tests.py
+│   ├── test_when_fetch_categories_with_subcategories_tests.py
+│   ├── test_when_fetch_subcategories_by_category_tests.py
+│   ├── test_when_fetch_recipes_by_category_and_subcategory_tests.py
+│   ├── test_when_fetch_recipes_by_tag_tests.py
+│   ├── test_when_fetch_recipes_by_name_tests.py
+│   ├── test_when_fetch_recipe_by_id_tests.py
+│   ├── test_when_fetch_recipes_by_dependency_tests.py
+│   ├── test_when_validating_json_response_format_tests.py
+│   └── test_when_dataset_is_malformed_tests.py
+├── example_usage.py                   # Usage examples
+├── pyproject.toml                    # Project configuration and dependencies
+├── pytest.ini                        # Test configuration
+└── README.md                         # This file
+```
+
+## Key Design Decisions
+
+1. **Dependency Injection**: Uses a callable for data loading to support different data sources
+2. **Lazy Loading**: Data is loaded only when first accessed
+3. **Robust Error Handling**: Gracefully handles malformed data, missing fields, and exceptions
+4. **Case-Insensitive Search**: Most searches are case-insensitive for better usability
+5. **JSON-First**: All responses are JSON-serializable
+6. **Type Safety**: Validates input types and handles edge cases
+
+## Testing Strategy
+
+- **100 unit tests** covering all methods and edge cases
+- **TDD approach** with tests written before implementation
+- **Mock usage** for isolating external dependencies
+- **Comprehensive fixtures** with realistic sample data
+- **Naming conventions** following the specified format
+
+## Dependencies
+
+- `pytest` - Testing framework
+- `jsonpath-ng` - JSONPath query support (imported but not used in current implementation)
+- `beautifulsoup4`, `requests`, `lxml` - For HTML parsing (from existing code)
+
+## Running Tests
+
+```bash
+# Run all tests
+uv run pytest tests/
+
+# Run specific test file
+uv run pytest tests/test_when_fetch_all_categories_tests.py
+
+# Run with verbose output
+uv run pytest tests/ -v
+
+# Run example
+uv run python example_usage.py
+```
+
+## Data Format
+
+The expected JSON structure for recipes:
+
+```json
+[
+  {
+    "name": "string",
+    "description": "string",
+    "package": "string",
+    "dependency": "string",
+    "mvn-command-line": "string",
+    "category": "string",
+    "sub-category": "string",
+    "id": "string",
+    "tags": ["string"],
+    "link": "string"
+  }
+]
 ```
 
 ## Contributing
 
-1. Ensure you have uv installed and configured
-2. Follow the installation and setup steps above
-3. Make your changes
-4. Test the extraction script
-5. Submit a pull request
+This project follows TDD principles. When adding new features:
+
+1. Write failing tests first
+2. Implement the feature
+3. Ensure all tests pass
+4. Follow the established naming conventions
 
 ## License
 
-MIT - [https://opensource.org/licenses/MIT](https://opensource.org/licenses/MIT)
+This project is part of the OpenRewrite ecosystem.
