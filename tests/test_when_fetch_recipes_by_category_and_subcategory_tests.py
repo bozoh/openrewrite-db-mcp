@@ -43,6 +43,30 @@ def sample_data():
             "id": "org.openrewrite.testing.JUnit5Migration",
             "tags": ["test", "junit", "migration"],
             "link": "https://docs.openrewrite.org/..."
+        },
+        {
+            "name": "Recipe with null category",
+            "description": "Test recipe",
+            "package": "test",
+            "dependency": "test",
+            "mvn-command-line": "mvn ...",
+            "category": None,
+            "sub-category": "test",
+            "id": "test.NullCategory",
+            "tags": ["test"],
+            "link": "https://test.com"
+        },
+        {
+            "name": "Recipe with null subcategory",
+            "description": "Test recipe",
+            "package": "test",
+            "dependency": "test",
+            "mvn-command-line": "mvn ...",
+            "category": "java",
+            "sub-category": None,
+            "id": "test.NullSubcategory",
+            "tags": ["test"],
+            "link": "https://test.com"
         }
     ]
 
@@ -124,3 +148,17 @@ class WhenFetchRecipesByCategoryAndSubcategoryTests:
         assert "sub-category" in recipe
         assert "tags" in recipe
         assert "link" in recipe
+
+    def test_that_fetching_recipes_with_null_category_in_data_should_not_include_null_categories_test(self, repo):
+        result = repo.get_recipes_by_category("java")
+        assert len(result) == 1
+        assert result[0]["name"] == "Recipe with null subcategory"
+        # Should not include the recipe with null category
+
+    def test_that_fetching_recipes_with_null_subcategory_in_data_should_not_match_specific_subcategory_test(self, repo):
+        result = repo.get_recipes_by_category("java", "test")
+        assert len(result) == 0  # The recipe with null subcategory should not match
+
+    def test_that_fetching_recipes_with_null_category_should_not_be_included_in_any_category_search_test(self, repo):
+        result = repo.get_recipes_by_category("test")
+        assert len(result) == 0  # Recipe with null category should not be found

@@ -65,8 +65,10 @@ class RecipeRepository:
         category_map = {}
 
         for recipe in self._stream_recipes():
-            category = recipe.get('category', '').lower()
-            subcategory = recipe.get('sub-category', '').lower() if recipe.get('sub-category') else None
+            category_val = recipe.get('category')
+            category = category_val.lower() if isinstance(category_val, str) else None
+            subcategory_val = recipe.get('sub-category')
+            subcategory = subcategory_val.lower() if isinstance(subcategory_val, str) else None
 
             if category:
                 if category not in category_map:
@@ -102,10 +104,11 @@ class RecipeRepository:
         subcategories = set()
 
         for recipe in self._stream_recipes():
-            if recipe.get('category', '').lower() == category_lower:
-                subcategory = recipe.get('sub-category')
-                if subcategory:
-                    subcategories.add(subcategory.lower())
+            category_val = recipe.get('category')
+            if isinstance(category_val, str) and category_val.lower() == category_lower:
+                subcategory_val = recipe.get('sub-category')
+                if isinstance(subcategory_val, str):
+                    subcategories.add(subcategory_val.lower())
 
         return sorted(list(subcategories))
 
@@ -128,11 +131,14 @@ class RecipeRepository:
 
         results = []
         for recipe in self._stream_recipes():
-            if recipe.get('category', '').lower() == category_lower:
+            category_val = recipe.get('category')
+            if isinstance(category_val, str) and category_val.lower() == category_lower:
                 if subcategory_lower is None:
                     results.append(recipe)
-                elif recipe.get('sub-category', '').lower() == subcategory_lower:
-                    results.append(recipe)
+                else:
+                    subcategory_val = recipe.get('sub-category')
+                    if isinstance(subcategory_val, str) and subcategory_val.lower() == subcategory_lower:
+                        results.append(recipe)
 
         return results
 
