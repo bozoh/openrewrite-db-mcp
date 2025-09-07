@@ -1,0 +1,10 @@
+[project]
+name = "openrewrite-db-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0"
+]
