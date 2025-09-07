@@ -1,6 +1,7 @@
 import json
 import os
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Iterator
+import ijson
 from jsonpath_ng import parse as jsonpath_parse
 
 
@@ -11,35 +12,33 @@ class RecipeRepository:
 
     def __init__(self, json_file_path: str):
         """
-        Initialize the repository with the path to the JSON file.
+        Initialize the repository with a path to the JSON file containing the recipes.
 
         Args:
             json_file_path: Path to the JSON file containing the recipes
         """
+        if not json_file_path or not isinstance(json_file_path, str):
+            raise ValueError("json_file_path must be a non-empty string")
+
         self.json_file_path = json_file_path
-        self._data: Optional[List[Dict[str, Any]]] = None
 
-    @property
-    def data(self) -> List[Dict[str, Any]]:
-        """Lazy load the data when first accessed."""
-        if self._data is None:
-            try:
-                if not os.path.exists(self.json_file_path):
-                    self._data = []
-                else:
-                    with open(self.json_file_path, 'r', encoding='utf-8') as f:
-                        loaded_data = json.load(f)
+    def _stream_recipes(self) -> Iterator[Dict[str, Any]]:
+        """
+        Stream recipes from the JSON file one by one.
 
-                    if loaded_data is None:
-                        self._data = []
-                    elif isinstance(loaded_data, list):
-                        # Filter out non-dict items
-                        self._data = [item for item in loaded_data if isinstance(item, dict)]
-                    else:
-                        self._data = []
-            except (json.JSONDecodeError, IOError, Exception):
-                self._data = []
-        return self._data
+        Yields:
+            Recipe dictionaries from the JSON file
+        """
+        try:
+            if not os.path.exists(self.json_file_path):
+                return
+
+            with open(self.json_file_path, 'rb') as f:
+                for item in ijson.items(f, 'item'):
+                    if isinstance(item, dict):
+                        yield item
+        except (ijson.IncompleteJSONError, IOError, Exception):
+            return
 
     def get_all_categories(self) -> List[str]:
         """
@@ -49,7 +48,7 @@ class RecipeRepository:
             List of unique category names, sorted alphabetically
         """
         categories = set()
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             category = recipe.get('category')
             if category and isinstance(category, str):
                 categories.add(category.lower())
@@ -65,7 +64,7 @@ class RecipeRepository:
         """
         category_map = {}
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             category = recipe.get('category', '').lower()
             subcategory = recipe.get('sub-category', '').lower() if recipe.get('sub-category') else None
 
@@ -102,7 +101,7 @@ class RecipeRepository:
         category_lower = category.lower()
         subcategories = set()
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             if recipe.get('category', '').lower() == category_lower:
                 subcategory = recipe.get('sub-category')
                 if subcategory:
@@ -128,7 +127,7 @@ class RecipeRepository:
         subcategory_lower = subcategory.lower() if subcategory and isinstance(subcategory, str) else None
 
         results = []
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             if recipe.get('category', '').lower() == category_lower:
                 if subcategory_lower is None:
                     results.append(recipe)
@@ -153,7 +152,7 @@ class RecipeRepository:
         tag_lower = tag.lower()
         results = []
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             tags = recipe.get('tags', [])
             if isinstance(tags, list):
                 for recipe_tag in tags:
@@ -179,7 +178,7 @@ class RecipeRepository:
         query_lower = name_query.lower()
         results = []
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             name = recipe.get('name', '')
             if isinstance(name, str) and query_lower in name.lower():
                 results.append(recipe)
@@ -199,7 +198,7 @@ class RecipeRepository:
         if not recipe_id or not isinstance(recipe_id, str):
             return {}
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             if recipe.get('id') == recipe_id:
                 return recipe
 
@@ -221,7 +220,7 @@ class RecipeRepository:
         dependency_lower = dependency.lower()
         results = []
 
-        for recipe in self.data:
+        for recipe in self._stream_recipes():
             dep = recipe.get('dependency', '')
             if isinstance(dep, str) and dependency_lower in dep.lower():
                 results.append(recipe)
