@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -11,54 +12,74 @@ class WhenDatasetIsMalformedTests:
             {"category": "testing"},  # missing name
             {"name": "Recipe 3"}  # missing category
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        # Should not break and should handle gracefully
-        categories = repo.get_all_categories()
-        assert isinstance(categories, list)
+            # Should not break and should handle gracefully
+            categories = repo.get_all_categories()
+            assert isinstance(categories, list)
 
-        recipes = repo.get_recipes_by_category("spring")
-        assert isinstance(recipes, list)
+            recipes = repo.get_recipes_by_category("spring")
+            assert isinstance(recipes, list)
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_list_dataset_should_result_in_empty_responses_test(self):
-        loader = Mock(return_value="not a list")
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write('"not a list"')
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        assert repo.get_all_categories() == []
-        assert repo.get_categories_with_subcategories() == []
-        assert repo.get_subcategories_by_category("test") == []
-        assert repo.get_recipes_by_category("test") == []
-        assert repo.get_recipes_by_tag("test") == []
-        assert repo.get_recipes_by_name("test") == []
-        assert repo.get_recipe_by_id("test") == {}
-        assert repo.get_recipes_by_dependency("test") == []
+            assert repo.get_all_categories() == []
+            assert repo.get_categories_with_subcategories() == []
+            assert repo.get_subcategories_by_category("test") == []
+            assert repo.get_recipes_by_category("test") == []
+            assert repo.get_recipes_by_tag("test") == []
+            assert repo.get_recipes_by_name("test") == []
+            assert repo.get_recipe_by_id("test") == {}
+            assert repo.get_recipes_by_dependency("test") == []
+        finally:
+            os.unlink(temp_path)
 
     def test_that_none_dataset_should_result_in_empty_responses_test(self):
-        loader = Mock(return_value=None)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write('null')
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        assert repo.get_all_categories() == []
-        assert repo.get_categories_with_subcategories() == []
-        assert repo.get_subcategories_by_category("test") == []
-        assert repo.get_recipes_by_category("test") == []
-        assert repo.get_recipes_by_tag("test") == []
-        assert repo.get_recipes_by_name("test") == []
-        assert repo.get_recipe_by_id("test") == {}
-        assert repo.get_recipes_by_dependency("test") == []
+            assert repo.get_all_categories() == []
+            assert repo.get_categories_with_subcategories() == []
+            assert repo.get_subcategories_by_category("test") == []
+            assert repo.get_recipes_by_category("test") == []
+            assert repo.get_recipes_by_tag("test") == []
+            assert repo.get_recipes_by_name("test") == []
+            assert repo.get_recipe_by_id("test") == {}
+            assert repo.get_recipes_by_dependency("test") == []
+        finally:
+            os.unlink(temp_path)
 
     def test_that_empty_dataset_should_result_in_empty_responses_test(self):
-        loader = Mock(return_value=[])
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump([], f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        assert repo.get_all_categories() == []
-        assert repo.get_categories_with_subcategories() == []
-        assert repo.get_subcategories_by_category("test") == []
-        assert repo.get_recipes_by_category("test") == []
-        assert repo.get_recipes_by_tag("test") == []
-        assert repo.get_recipes_by_name("test") == []
-        assert repo.get_recipe_by_id("test") == {}
-        assert repo.get_recipes_by_dependency("test") == []
+            assert repo.get_all_categories() == []
+            assert repo.get_categories_with_subcategories() == []
+            assert repo.get_subcategories_by_category("test") == []
+            assert repo.get_recipes_by_category("test") == []
+            assert repo.get_recipes_by_tag("test") == []
+            assert repo.get_recipes_by_name("test") == []
+            assert repo.get_recipe_by_id("test") == {}
+            assert repo.get_recipes_by_dependency("test") == []
+        finally:
+            os.unlink(temp_path)
 
     def test_that_malformed_recipe_objects_should_be_handled_gracefully_test(self):
         data = [
@@ -68,14 +89,19 @@ class WhenDatasetIsMalformedTests:
             123,  # number instead of dict
             {"name": "Recipe 2", "category": "testing"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        # Should not break
-        categories = repo.get_all_categories()
-        assert isinstance(categories, list)
-        # Should only include valid recipes
-        assert len(categories) >= 0
+            # Should not break
+            categories = repo.get_all_categories()
+            assert isinstance(categories, list)
+            # Should only include valid recipes
+            assert len(categories) >= 0
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_string_category_values_should_be_handled_test(self):
         data = [
@@ -83,11 +109,16 @@ class WhenDatasetIsMalformedTests:
             {"name": "Recipe 2", "category": None},  # None category
             {"name": "Recipe 3", "category": "spring"}  # valid category
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        categories = repo.get_all_categories()
-        assert "spring" in categories
+            categories = repo.get_all_categories()
+            assert "spring" in categories
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_string_name_values_should_be_handled_in_name_search_test(self):
         data = [
@@ -95,73 +126,100 @@ class WhenDatasetIsMalformedTests:
             {"name": None, "category": "spring"},  # None name
             {"name": "Recipe 1", "category": "spring"}  # valid name
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        recipes = repo.get_recipes_by_name("Recipe")
-        assert len(recipes) == 1
-        assert recipes[0]["name"] == "Recipe 1"
+            recipes = repo.get_recipes_by_name("Recipe")
+            assert len(recipes) == 1
+            assert recipes[0]["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_list_tags_should_be_handled_test(self):
         data = [
             {"name": "Recipe 1", "tags": "not a list", "category": "spring"},
             {"name": "Recipe 2", "tags": ["spring"], "category": "spring"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        recipes = repo.get_recipes_by_tag("spring")
-        assert len(recipes) == 1
-        assert recipes[0]["name"] == "Recipe 2"
+            recipes = repo.get_recipes_by_tag("spring")
+            assert len(recipes) == 1
+            assert recipes[0]["name"] == "Recipe 2"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_string_tag_values_in_list_should_be_handled_test(self):
         data = [
             {"name": "Recipe 1", "tags": ["spring", 123, None], "category": "spring"},
             {"name": "Recipe 2", "tags": ["testing"], "category": "testing"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        recipes = repo.get_recipes_by_tag("spring")
-        assert len(recipes) == 1
-        assert recipes[0]["name"] == "Recipe 1"
+            recipes = repo.get_recipes_by_tag("spring")
+            assert len(recipes) == 1
+            assert recipes[0]["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_string_dependency_values_should_be_handled_test(self):
         data = [
             {"name": "Recipe 1", "dependency": 123, "category": "spring"},
             {"name": "Recipe 2", "dependency": "spring-boot", "category": "spring"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        recipes = repo.get_recipes_by_dependency("spring-boot")
-        assert len(recipes) == 1
-        assert recipes[0]["name"] == "Recipe 2"
+            recipes = repo.get_recipes_by_dependency("spring-boot")
+            assert len(recipes) == 1
+            assert recipes[0]["name"] == "Recipe 2"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_non_string_id_values_should_be_handled_test(self):
         data = [
             {"name": "Recipe 1", "id": 123, "category": "spring"},
             {"name": "Recipe 2", "id": "recipe2", "category": "spring"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        recipe = repo.get_recipe_by_id("recipe2")
-        assert recipe["name"] == "Recipe 2"
+            recipe = repo.get_recipe_by_id("recipe2")
+            assert recipe["name"] == "Recipe 2"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_exception_in_loader_should_be_handled_gracefully_test(self):
-        def failing_loader():
-            raise Exception("Loader failed")
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            f.write('{invalid json')
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
 
-        loader = Mock(side_effect=failing_loader)
-        repo = RecipeRepository(load_json_callable=loader)
-
-        # All methods should return empty results without raising exceptions
-        assert repo.get_all_categories() == []
-        assert repo.get_categories_with_subcategories() == []
-        assert repo.get_subcategories_by_category("test") == []
-        assert repo.get_recipes_by_category("test") == []
-        assert repo.get_recipes_by_tag("test") == []
-        assert repo.get_recipes_by_name("test") == []
-        assert repo.get_recipe_by_id("test") == {}
-        assert repo.get_recipes_by_dependency("test") == []
+            # All methods should return empty results without raising exceptions
+            assert repo.get_all_categories() == []
+            assert repo.get_categories_with_subcategories() == []
+            assert repo.get_subcategories_by_category("test") == []
+            assert repo.get_recipes_by_category("test") == []
+            assert repo.get_recipes_by_tag("test") == []
+            assert repo.get_recipes_by_name("test") == []
+            assert repo.get_recipe_by_id("test") == {}
+            assert repo.get_recipes_by_dependency("test") == []
+        finally:
+            os.unlink(temp_path)

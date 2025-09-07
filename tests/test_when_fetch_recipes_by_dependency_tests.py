@@ -1,6 +1,7 @@
 import json
 import pytest
-from unittest.mock import Mock
+import tempfile
+import os
 from lib.recipe_repository import RecipeRepository
 
 
@@ -48,8 +49,11 @@ def sample_data():
 
 @pytest.fixture
 def repo(sample_data):
-    loader = Mock(return_value=sample_data)
-    return RecipeRepository(load_json_callable=loader)
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(sample_data, f)
+        temp_path = f.name
+    yield RecipeRepository(temp_path)
+    os.unlink(temp_path)
 
 
 class WhenFetchRecipesByDependencyTests:
@@ -92,35 +96,50 @@ class WhenFetchRecipesByDependencyTests:
             {"name": "Recipe 2", "dependency": "org.springframework:spring-web"},
             {"name": "Recipe 3", "dependency": "junit:junit"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipes_by_dependency("org.springframework")
-        assert len(result) == 2
-        names = [r["name"] for r in result]
-        assert "Recipe 1" in names
-        assert "Recipe 2" in names
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipes_by_dependency("org.springframework")
+            assert len(result) == 2
+            names = [r["name"] for r in result]
+            assert "Recipe 1" in names
+            assert "Recipe 2" in names
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_recipes_by_dependency_should_handle_recipes_without_dependency_test(self):
         data = [
             {"name": "Recipe 1", "dependency": "spring-boot"},
             {"name": "Recipe 2"}  # no dependency
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipes_by_dependency("spring-boot")
-        assert len(result) == 1
-        assert result[0]["name"] == "Recipe 1"
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipes_by_dependency("spring-boot")
+            assert len(result) == 1
+            assert result[0]["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_recipes_by_dependency_should_handle_non_string_dependencies_test(self):
         data = [
             {"name": "Recipe 1", "dependency": "spring-boot"},
             {"name": "Recipe 2", "dependency": 123}  # non-string dependency
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipes_by_dependency("spring-boot")
-        assert len(result) == 1
-        assert result[0]["name"] == "Recipe 1"
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipes_by_dependency("spring-boot")
+            assert len(result) == 1
+            assert result[0]["name"] == "Recipe 1"
+        finally:
+            os.unlink(temp_path)
 
     def test_that_fetching_recipes_by_dependency_with_very_long_dependency_should_return_empty_list_test(self, repo):
         result = repo.get_recipes_by_dependency("x" * 10000)
@@ -132,7 +151,12 @@ class WhenFetchRecipesByDependencyTests:
             {"name": "Recipe 2", "dependency": "org.springframework:spring-boot-starter"},
             {"name": "Recipe 3", "dependency": "starter-web"}
         ]
-        loader = Mock(return_value=data)
-        repo = RecipeRepository(load_json_callable=loader)
-        result = repo.get_recipes_by_dependency("starter")
-        assert len(result) == 3
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(data, f)
+            temp_path = f.name
+        try:
+            repo = RecipeRepository(temp_path)
+            result = repo.get_recipes_by_dependency("starter")
+            assert len(result) == 3
+        finally:
+            os.unlink(temp_path)
