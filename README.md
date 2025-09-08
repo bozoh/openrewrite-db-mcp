@@ -104,6 +104,7 @@ The project includes comprehensive unit tests covering:
 ├── pyproject.toml                    # Project configuration and dependencies
 ├── pytest.ini                        # Test configuration
 ├── README.md                         # This file
+├── LICENSE                           # MIT License
 └── uv.lock                           # uv lock file
 ```
 
@@ -427,4 +428,4 @@ This project follows TDD principles. When adding new features:
 
 ## License
 
-This project is part of the OpenRewrite ecosystem.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
