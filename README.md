@@ -1,6 +1,6 @@
 # OpenRewrite Recipe Database MCP
 
-A Python library for querying OpenRewrite recipes stored in JSON format using JSONPath expressions.
+A Python library for querying OpenRewrite recipes stored in JSON format using JSONPath expressions. Includes an MCP (Model Context Protocol) server for AI assistants.
 
 ## Overview
 
@@ -74,9 +74,19 @@ The project includes comprehensive unit tests covering:
 .
 ├── lib/
 │   ├── __init__.py
-│   └── recipe_repository.py          # Main RecipeRepository class
+│   ├── recipe_repository.py          # Main RecipeRepository class
+│   ├── mcp_service.py                # MCP service layer
+│   └── recipe_extractor.py           # Recipe extraction utilities
+├── mcp_server/
+│   ├── __init__.py
+│   ├── main.py                       # MCP server entry point
+│   └── server.py                     # MCP server implementation
+├── resource/
+│   └── db/
+│       └── recipes.json              # Recipe database
 ├── tests/
 │   ├── __init__.py
+│   ├── sample_recipes.json           # Test data
 │   ├── test_when_fetch_all_categories_tests.py
 │   ├── test_when_fetch_categories_with_subcategories_tests.py
 │   ├── test_when_fetch_subcategories_by_category_tests.py
@@ -86,11 +96,16 @@ The project includes comprehensive unit tests covering:
 │   ├── test_when_fetch_recipe_by_id_tests.py
 │   ├── test_when_fetch_recipes_by_dependency_tests.py
 │   ├── test_when_validating_json_response_format_tests.py
-│   └── test_when_dataset_is_malformed_tests.py
+│   ├── test_when_dataset_is_malformed_tests.py
+│   ├── test_when_mcp_server_tests.py
+│   └── test_when_running_mcp_server_with_uvx_tests.py
 ├── example_usage.py                   # Usage examples
+├── main.py                           # CLI interface
 ├── pyproject.toml                    # Project configuration and dependencies
 ├── pytest.ini                        # Test configuration
-└── README.md                         # This file
+├── README.md                         # This file
+├── README_MCP.md                     # MCP-specific documentation
+└── uv.lock                           # uv lock file
 ```
 
 ## Key Design Decisions
@@ -152,6 +167,42 @@ The expected JSON structure for recipes:
   }
 ]
 ```
+
+## MCP Server
+
+This project includes a Model Context Protocol (MCP) server that exposes the recipe database functionality to AI assistants and other MCP-compatible clients.
+
+### Running the MCP Server
+
+#### Option 1: From local directory
+```bash
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Run the MCP server
+uvx --from . openrewrite-db-mcp
+```
+
+#### Option 2: Directly from GitHub repository
+```bash
+# Run the MCP server directly from the GitHub repository
+uvx --from git+https://github.com/bozoh/openrewrite-db-mcp openrewrite-db-mcp
+```
+
+### MCP Server Features
+
+The MCP server provides the following tools:
+
+- **get_recipe_by_id(recipe_id)** - Get a single recipe by its ID
+- **get_recipes_by_name(name_query)** - Search recipes by partial name match
+- **get_recipes_by_tag(tag)** - Get recipes containing a specific tag
+- **get_recipes_by_category(category, subcategory)** - Get recipes by category and optional subcategory
+- **get_recipes_by_dependency(dependency)** - Get recipes by dependency package name
+- **get_all_categories()** - Get all unique categories
+- **get_subcategories_by_category(category)** - Get subcategories for a specific category
+- **get_categories_with_subcategories()** - Get all categories with their subcategories
+
+All tools return results in JSON format and are designed to work seamlessly with AI assistants.
 
 ## Contributing
 
