@@ -78,6 +78,13 @@ class RecipeExtractor:
             # Extract package and dependency from Maven command
             package, dependency = self._extract_package_and_dependency(mvn_command, soup)
 
+            # Swap name and description as per bug fix
+            name, description = description, name
+
+            # Set name to last part of package after last dot
+            if package:
+                name = package.split('.')[-1]
+
             return {
                 "name": name,
                 "description": description,
