@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import hashlib
 from typing import List, Dict, Optional, Tuple
+from console_progressbar import ProgressBar
 
 
 class RecipeExtractor:
@@ -182,6 +183,25 @@ class RecipeExtractor:
     def process_directory(self, directory_path: str) -> None:
         """Process all HTML files in a directory recursively."""
         try:
+            # Count total files to process for progress bar
+            total_files = 0
+            for root, dirs, files in os.walk(directory_path):
+                # Skip the root recipes directory
+                if root == os.path.join(self.base_path, 'recipes'):
+                    continue
+                for file in files:
+                    if file.endswith('.html') and not file.endswith('README.html'):
+                        file_path = os.path.join(root, file)
+                        if file_path not in self.processed_files:
+                            category, _ = self.determine_category_and_subcategory(file_path)
+                            if category:
+                                total_files += 1
+
+            # Initialize progress bar
+            pb = ProgressBar(total=total_files, prefix='Processing recipes', suffix='', decimals=0, length=50, fill='█')
+            processed_count = 0
+
+            # Process files with progress bar
             for root, dirs, files in os.walk(directory_path):
                 # Skip the root recipes directory
                 if root == os.path.join(self.base_path, 'recipes'):
@@ -199,7 +219,9 @@ class RecipeExtractor:
                         category, sub_category = self.determine_category_and_subcategory(file_path)
 
                         if category:
-                            print(f"Processing: {file} (category: {category}, sub-category: {sub_category})")
+                            # Update progress bar
+                            pb.print_progress_bar(processed_count)
+                            processed_count += 1
 
                             # Parse the recipe
                             recipe_data = self.parse_recipe_file(file_path)
@@ -233,6 +255,9 @@ class RecipeExtractor:
                                     cat_key += f"/{sub_category}"
                                 self.category_counts[cat_key] = self.category_counts.get(cat_key, 0) + 1
 
+            # Complete progress bar
+            pb.print_progress_bar(total_files)
+
         except Exception as e:
             print(f"Error processing directory {directory_path}: {e}")
 
@@ -245,13 +270,13 @@ class RecipeExtractor:
     def print_statistics(self) -> None:
         """Print extraction statistics."""
         total_recipes = len(self.recipes)
-        open_source = total_recipes  # Assuming all are open source
-        proprietary = 0
+        # Count unique categories (split by '/' and take first part)
+        unique_categories = set()
+        for cat_key in self.category_counts.keys():
+            category = cat_key.split('/')[0]
+            unique_categories.add(category)
+        total_categories = len(unique_categories)
 
         print(f"\nExtraction complete!")
+        print(f"Total categories extracted: {total_categories}")
         print(f"Total recipes extracted: {total_recipes}")
-        print(f"Open source recipes: {open_source}")
-        print(f"Proprietary recipes: {proprietary}")
-        print("\nRecipes per category:")
-        for category, count in sorted(self.category_counts.items()):
-            print(f"  {category}: {count}")

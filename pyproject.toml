@@ -14,7 +14,8 @@ dependencies = [
     "lxml>=4.9.0",
     "jsonpath-ng>=1.5.0",
     "ijson>=3.2.0",
-    "mcp>=1.2.0"
+    "mcp>=1.2.0",
+    "console-progressbar>=1.1.2",
 ]
 
 [project.optional-dependencies]
