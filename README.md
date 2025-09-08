@@ -185,8 +185,11 @@ uvx --from . openrewrite-db-mcp
 
 #### Option 2: Directly from GitHub repository
 ```bash
-# Run the MCP server directly from the GitHub repository
+# Run the MCP server directly from the GitHub repository (after merge to main/master)
 uvx --from git+https://github.com/bozoh/openrewrite-db-mcp openrewrite-db-mcp
+
+# Or specify a specific branch/tag
+uvx --from git+https://github.com/bozoh/openrewrite-db-mcp@develop openrewrite-db-mcp
 ```
 
 ### MCP Server Features
