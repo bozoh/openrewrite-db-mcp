@@ -104,7 +104,6 @@ The project includes comprehensive unit tests covering:
 ├── pyproject.toml                    # Project configuration and dependencies
 ├── pytest.ini                        # Test configuration
 ├── README.md                         # This file
-├── README_MCP.md                     # MCP-specific documentation
 └── uv.lock                           # uv lock file
 ```
 
@@ -206,6 +205,216 @@ The MCP server provides the following tools:
 - **get_categories_with_subcategories()** - Get all categories with their subcategories
 
 All tools return results in JSON format and are designed to work seamlessly with AI assistants.
+
+## MCP Server Details
+
+### Available Tools
+
+#### 1. `get_recipe_by_id`
+Search for a specific OpenRewrite recipe by ID.
+
+**Parameters:**
+- `recipe_id` (string): Recipe ID to search for (e.g., "org.openrewrite.java.spring.AddSpringJdbc")
+
+**Response format:**
+```json
+{
+  "name": "Recipe Name",
+  "id": "recipe.id",
+  "category": "category",
+  ...
+}
+```
+Or `{}` if not found.
+
+#### 2. `get_recipes_by_name`
+Search OpenRewrite recipes by partial name match (case-insensitive).
+
+**Parameters:**
+- `name_query` (string): Search term for name (e.g., "spring", "jdbc")
+
+**Response format:**
+```json
+[
+  {
+    "name": "Recipe Name",
+    "id": "recipe.id",
+    "category": "category",
+    ...
+  },
+  ...
+]
+```
+Or `[]` if no recipes match.
+
+#### 3. `get_recipes_by_tag`
+Search OpenRewrite recipes containing a specific tag.
+
+**Parameters:**
+- `tag` (string): Tag to search for (e.g., "spring", "java", "database")
+
+**Response format:**
+```json
+[
+  {
+    "name": "Recipe Name",
+    "id": "recipe.id",
+    "tags": ["tag1", "tag2"],
+    ...
+  },
+  ...
+]
+```
+Or `[]` if no recipes contain the tag.
+
+#### 4. `get_recipes_by_category`
+Search OpenRewrite recipes by category and optionally subcategory.
+
+**Parameters:**
+- `category` (string): Recipe category (e.g., "spring", "java", "testing")
+- `subcategory` (string, optional): Subcategory to filter by (e.g., "jdbc", "web", "junit")
+
+**Response format:**
+```json
+[
+  {
+    "name": "Recipe Name",
+    "id": "recipe.id",
+    "category": "category",
+    "sub-category": "subcategory",
+    ...
+  },
+  ...
+]
+```
+Or `[]` if no recipes match the criteria.
+
+#### 5. `get_recipes_by_dependency`
+Search OpenRewrite recipes by dependency (partial match, case-insensitive).
+
+**Parameters:**
+- `dependency` (string): Dependency to search for (e.g., "springframework", "junit", "org.springframework")
+
+**Response format:**
+```json
+[
+  {
+    "name": "Recipe Name",
+    "id": "recipe.id",
+    "dependency": "dependency.string",
+    ...
+  },
+  ...
+]
+```
+Or `[]` if no recipes have matching dependencies.
+
+#### 6. `get_all_categories`
+Get all unique categories from the OpenRewrite recipes database.
+
+**Parameters:** None
+
+**Response format:**
+```json
+["category1", "category2", "category3", ...]
+```
+
+#### 7. `get_subcategories_by_category`
+Get all subcategories for a specific category from the OpenRewrite recipes database.
+
+**Parameters:**
+- `category` (string): Category to get subcategories for (e.g., "spring", "java", "testing")
+
+**Response format:**
+```json
+["subcategory1", "subcategory2", "subcategory3", ...]
+```
+Or `[]` if category not found or has no subcategories.
+
+#### 8. `get_categories_with_subcategories`
+Get all categories with their respective subcategories from the OpenRewrite recipes database.
+
+**Parameters:** None
+
+**Response format:**
+```json
+[
+  {
+    "category": "category1",
+    "sub-categories": ["sub1", "sub2"]
+  },
+  {
+    "category": "category2",
+    "sub-categories": ["sub3", "sub4"]
+  },
+  ...
+]
+```
+
+### VSCode Configuration
+
+To use the MCP server with VSCode and AI assistants, configure it in your VSCode settings:
+
+#### Option 1: Local Configuration
+```json
+{
+  "mcp": {
+    "servers": {
+      "openrewrite-db": {
+        "command": "uvx",
+        "args": ["--from", ".", "openrewrite-db-mcp"]
+      }
+    }
+  }
+}
+```
+
+#### Option 2: Remote Configuration (after merge to main/master)
+```json
+{
+  "mcp": {
+    "servers": {
+      "openrewrite-db": {
+        "command": "uvx",
+        "args": ["--from", "git+https://github.com/bozoh/openrewrite-db-mcp", "openrewrite-db-mcp"]
+      }
+    }
+  }
+}
+```
+
+#### Option 3: Remote Configuration from develop branch
+```json
+{
+  "mcp": {
+    "servers": {
+      "openrewrite-db": {
+        "command": "uvx",
+        "args": ["--from", "git+https://github.com/bozoh/openrewrite-db-mcp@develop", "openrewrite-db-mcp"]
+      }
+    }
+  }
+}
+```
+
+### Error Handling
+
+- Invalid inputs (None, empty strings, wrong types) return appropriate empty results
+- Internal repository errors are caught and return empty results
+- All responses are valid JSON strings
+
+### Response Formats
+
+- `get_recipe_by_id`: `{"name": "...", "id": "..."}` or `{}`
+- List searches: `[{"name": "...", ...}]` or `[]`
+- Categories: `["category1", "category2"]` or `[]`
+- Categories with subcategories: `[{"category": "java", "sub-categories": ["spring", "hibernate"]}]` or `[]`
+
+### Architecture
+
+- `lib/mcp_service.py`: Service layer that validates inputs and handles errors
+- `mcp_server/server.py`: MCP server with registered tools
+- `mcp_server/main.py`: CLI entry point
 
 ## Contributing
 
