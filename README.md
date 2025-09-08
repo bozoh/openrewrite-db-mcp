@@ -4,7 +4,7 @@ A Python library for querying OpenRewrite recipes stored in JSON format using JS
 
 ## Overview
 
-This project implements a comprehensive RecipeRepository class that provides various methods to query OpenRewrite recipes from a JSON database. The implementation follows TDD (Test-Driven Development) principles with extensive unit test coverage.
+This project implements a comprehensive RecipeRepository class that provides various methods to query OpenRewrite recipes from a JSON database.
 
 ## Features
 
@@ -33,103 +33,47 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 ```
 
-3. Run tests:
+## Running the Project (CLI Mode)
+
+To run the project in command-line interface mode, use the main.py script from the project root:
+
 ```bash
-uv run pytest tests/
+uv run python main.py
 ```
 
-## Usage
+This will display the main menu with the following options:
 
-```python
-from lib.recipe_repository import RecipeRepository
+- **[1] Extrair receitas**: Extracts recipes from the downloaded HTML documentation and generates the JSON database.
+- **[2] Consultar receitas**: Opens the queries menu to search and filter recipes.
+- **[0] Sair**: Exits the application.
 
-# Create repository with JSON file path
-repo = RecipeRepository("path/to/recipes.json")
+### Queries Menu
 
-# Query examples
-categories = repo.get_all_categories()
-recipes = repo.get_recipes_by_category("spring")
-recipe = repo.get_recipe_by_id("org.openrewrite.java.spring.AddSpringJdbc")
+When selecting option [2] from the main menu, you'll access the queries menu with these options:
+
+- **[1] Listar todas as categorias**: Lists all unique categories.
+- **[2] Listar categorias com subcategorias**: Lists categories with their subcategories.
+- **[3] Buscar subcategorias por categoria**: Searches subcategories for a specific category (requires input).
+- **[4] Buscar receitas por categoria**: Searches recipes by category (optional subcategory).
+- **[5] Buscar receitas por tag**: Searches recipes by tag.
+- **[6] Buscar receitas por nome**: Searches recipes by partial name match.
+- **[7] Buscar receita por ID**: Searches for a specific recipe by ID.
+- **[8] Buscar receitas por dependencia**: Searches recipes by dependency.
+- **[0] Voltar ao menu principal**: Returns to the main menu.
+
+All query results are displayed in JSON format.
+
+## Getting the Recipe Data
+
+To obtain the OpenRewrite recipes catalog data, first download the HTML documentation:
+
+```bash
+cd resource && wget --recursive --no-clobber --html-extension --convert-links --no-parent --reject="*.jpg,*.jpeg,*.png,*.gif,*.css,*.js,*.svg,*.webp,*.ico" https://docs.openrewrite.org/recipes
 ```
 
-## Test Coverage
+This command downloads the recipes documentation to `resource/docs.openrewrite.org/`, excluding images and other non-essential files.
 
-The project includes comprehensive unit tests covering:
-
-- **Success scenarios** for all methods
-- **Failure scenarios** (empty results, non-existent items)
-- **Invalid input handling** (wrong types, None values, empty strings)
-- **Edge cases** (very long strings, malformed data)
-- **JSON serialization validation**
-- **Robustness against malformed datasets**
-
-### Test Results
-```
-======================== 100 passed in 0.47s ========================
-```
-
-## Project Structure
-
-```
-.
-├── lib/
-│   ├── __init__.py
-│   ├── recipe_repository.py          # Main RecipeRepository class
-│   ├── mcp_service.py                # MCP service layer
-│   └── recipe_extractor.py           # Recipe extraction utilities
-├── mcp_server/
-│   ├── __init__.py
-│   ├── main.py                       # MCP server entry point
-│   └── server.py                     # MCP server implementation
-├── resource/
-│   └── db/
-│       └── recipes.json              # Recipe database
-├── tests/
-│   ├── __init__.py
-│   ├── sample_recipes.json           # Test data
-│   ├── test_when_fetch_all_categories_tests.py
-│   ├── test_when_fetch_categories_with_subcategories_tests.py
-│   ├── test_when_fetch_subcategories_by_category_tests.py
-│   ├── test_when_fetch_recipes_by_category_and_subcategory_tests.py
-│   ├── test_when_fetch_recipes_by_tag_tests.py
-│   ├── test_when_fetch_recipes_by_name_tests.py
-│   ├── test_when_fetch_recipe_by_id_tests.py
-│   ├── test_when_fetch_recipes_by_dependency_tests.py
-│   ├── test_when_validating_json_response_format_tests.py
-│   ├── test_when_dataset_is_malformed_tests.py
-│   ├── test_when_mcp_server_tests.py
-│   └── test_when_running_mcp_server_with_uvx_tests.py
-├── example_usage.py                   # Usage examples
-├── main.py                           # CLI interface
-├── pyproject.toml                    # Project configuration and dependencies
-├── pytest.ini                        # Test configuration
-├── README.md                         # This file
-├── LICENSE                           # MIT License
-└── uv.lock                           # uv lock file
-```
-
-## Key Design Decisions
-
-1. **Dependency Injection**: Uses a callable for data loading to support different data sources
-2. **Lazy Loading**: Data is loaded only when first accessed
-3. **Robust Error Handling**: Gracefully handles malformed data, missing fields, and exceptions
-4. **Case-Insensitive Search**: Most searches are case-insensitive for better usability
-5. **JSON-First**: All responses are JSON-serializable
-6. **Type Safety**: Validates input types and handles edge cases
-
-## Testing Strategy
-
-- **100 unit tests** covering all methods and edge cases
-- **TDD approach** with tests written before implementation
-- **Mock usage** for isolating external dependencies
-- **Comprehensive fixtures** with realistic sample data
-- **Naming conventions** following the specified format
-
-## Dependencies
-
-- `pytest` - Testing framework
-- `jsonpath-ng` - JSONPath query support (imported but not used in current implementation)
-- `beautifulsoup4`, `requests`, `lxml` - For HTML parsing (from existing code)
+After downloading, run the extraction process from the CLI (option [1] in main.py) to parse the HTML files and create the JSON database at `resource/db/recipes.json`.
 
 ## Running Tests
 
@@ -397,25 +341,6 @@ To use the MCP server with VSCode and AI assistants, configure it in your VSCode
   }
 }
 ```
-
-### Error Handling
-
-- Invalid inputs (None, empty strings, wrong types) return appropriate empty results
-- Internal repository errors are caught and return empty results
-- All responses are valid JSON strings
-
-### Response Formats
-
-- `get_recipe_by_id`: `{"name": "...", "id": "..."}` or `{}`
-- List searches: `[{"name": "...", ...}]` or `[]`
-- Categories: `["category1", "category2"]` or `[]`
-- Categories with subcategories: `[{"category": "java", "sub-categories": ["spring", "hibernate"]}]` or `[]`
-
-### Architecture
-
-- `lib/mcp_service.py`: Service layer that validates inputs and handles errors
-- `mcp_server/server.py`: MCP server with registered tools
-- `mcp_server/main.py`: CLI entry point
 
 ## Contributing
 
