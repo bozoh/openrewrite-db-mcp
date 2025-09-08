@@ -59,25 +59,25 @@ def show_main_menu():
     """Display the main menu options."""
     print("\nOpenRewrite Recipe Extractor")
     print("=" * 40)
-    print("[1] Extrair receitas")
-    print("[2] Consultar receitas")
-    print("[0] Sair")
+    print("[1] Extract recipes")
+    print("[2] Query recipes")
+    print("[0] Exit")
     print()
 
 
 def show_queries_menu():
     """Display the queries menu options."""
-    print("\nMenu de Consultas")
+    print("\nQueries Menu")
     print("=" * 20)
-    print("[1] Listar todas as categorias")
-    print("[2] Listar categorias com subcategorias")
-    print("[3] Buscar subcategorias por categoria")
-    print("[4] Buscar receitas por categoria")
-    print("[5] Buscar receitas por tag")
-    print("[6] Buscar receitas por nome")
-    print("[7] Buscar receita por ID")
-    print("[8] Buscar receitas por dependencia")
-    print("[0] Voltar ao menu principal")
+    print("[1] List all categories")
+    print("[2] List categories with subcategories")
+    print("[3] Get subcategories by category")
+    print("[4] Get recipes by category")
+    print("[5] Get recipes by tag")
+    print("[6] Get recipes by name")
+    print("[7] Get recipe by ID")
+    print("[8] Get recipes by dependency")
+    print("[0] Back to main menu")
     print()
 
 
@@ -88,10 +88,10 @@ def handle_queries():
     while True:
         show_queries_menu()
         try:
-            choice = input("Escolha uma opção: ").strip()
+            choice = input("Choose an option: ").strip()
 
             if choice == '0':
-                print("Voltando ao menu principal...")
+                print("Returning to main menu...")
                 break
             elif choice == '1':
                 # Listar todas as categorias
@@ -99,71 +99,71 @@ def handle_queries():
                     result = repo.get_all_categories()
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '2':
                 # Listar categorias com subcategorias
                 try:
                     result = repo.get_categories_with_subcategories()
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '3':
-                # Buscar subcategorias por categoria
-                category = input("Digite a categoria: ").strip()
+                # Get subcategories by category
+                category = input("Enter category: ").strip()
                 try:
                     result = repo.get_subcategories_by_category(category)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '4':
-                # Buscar receitas por categoria
-                category = input("Digite a categoria: ").strip()
-                subcategory = input("Digite a subcategoria (ou deixe vazio): ").strip()
+                # Get recipes by category
+                category = input("Enter category: ").strip()
+                subcategory = input("Enter subcategory (or leave empty): ").strip()
                 subcategory = subcategory if subcategory else None
                 try:
                     result = repo.get_recipes_by_category(category, subcategory)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '5':
-                # Buscar receitas por tag
-                tag = input("Digite a tag: ").strip()
+                # Get recipes by tag
+                tag = input("Enter tag: ").strip()
                 try:
                     result = repo.get_recipes_by_tag(tag)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '6':
-                # Buscar receitas por nome
-                name = input("Digite o nome (parcial): ").strip()
+                # Get recipes by name
+                name = input("Enter name (partial): ").strip()
                 try:
                     result = repo.get_recipes_by_name(name)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '7':
-                # Buscar receita por ID
-                recipe_id = input("Digite o ID da receita: ").strip()
+                # Get recipe by ID
+                recipe_id = input("Enter recipe ID: ").strip()
                 try:
                     result = repo.get_recipe_by_id(recipe_id)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             elif choice == '8':
-                # Buscar receitas por dependencia
-                dependency = input("Digite a dependencia (parcial): ").strip()
+                # Get recipes by dependency
+                dependency = input("Enter dependency (partial): ").strip()
                 try:
                     result = repo.get_recipes_by_dependency(dependency)
                     print(json.dumps(result, ensure_ascii=False))
                 except Exception as e:
-                    print(f"Erro ao executar consulta: {e}")
+                    print(f"Error executing query: {e}")
             else:
-                print("Opção inválida. Tente novamente.")
+                print("Invalid option. Please try again.")
         except KeyboardInterrupt:
-            print("\nOperação cancelada pelo usuário.")
+            print("\nOperation cancelled by user.")
             break
         except EOFError:
-            print("\nEntrada terminada.")
+            print("\nInput terminated.")
             break
 
 
@@ -172,13 +172,13 @@ def main() -> int:
     while True:
         show_main_menu()
         try:
-            choice = input("Escolha uma opção: ").strip()
+            choice = input("Choose an option: ").strip()
 
             if choice == '0':
-                print("Saindo...")
+                print("Exiting...")
                 return 0
             elif choice == '1':
-                # Extrair receitas
+                # Extract recipes
                 app = RecipeExtractorApp()
                 result = app.run()
                 if isinstance(result, int):
@@ -186,20 +186,20 @@ def main() -> int:
                 else:
                     return 0
             elif choice == '2':
-                # Consultar receitas
+                # Query recipes
                 handle_queries()
             else:
-                print("Opção inválida. Tente novamente.")
+                print("Invalid option. Please try again.")
         except KeyboardInterrupt:
-            print("\nOperação cancelada pelo usuário.")
+            print("\nOperation cancelled by user.")
             return 1
         except EOFError:
-            print("\nEntrada terminada.")
+            print("\nInput terminated.")
             return 0
         except StopIteration:
             return 0
         except Exception as e:
-            print(f"Erro inesperado: {e}")
+            print(f"Unexpected error: {e}")
             return 1
 
 

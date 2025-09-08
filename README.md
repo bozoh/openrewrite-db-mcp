@@ -43,23 +43,23 @@ uv run python main.py
 
 This will display the main menu with the following options:
 
-- **[1] Extrair receitas**: Extracts recipes from the downloaded HTML documentation and generates the JSON database.
-- **[2] Consultar receitas**: Opens the queries menu to search and filter recipes.
-- **[0] Sair**: Exits the application.
+- **[1] Extract recipes**: Extracts recipes from the downloaded HTML documentation and generates the JSON database.
+- **[2] Query recipes**: Opens the queries menu to search and filter recipes.
+- **[0] Exit**: Exits the application.
 
 ### Queries Menu
 
 When selecting option [2] from the main menu, you'll access the queries menu with these options:
 
-- **[1] Listar todas as categorias**: Lists all unique categories.
-- **[2] Listar categorias com subcategorias**: Lists categories with their subcategories.
-- **[3] Buscar subcategorias por categoria**: Searches subcategories for a specific category (requires input).
-- **[4] Buscar receitas por categoria**: Searches recipes by category (optional subcategory).
-- **[5] Buscar receitas por tag**: Searches recipes by tag.
-- **[6] Buscar receitas por nome**: Searches recipes by partial name match.
-- **[7] Buscar receita por ID**: Searches for a specific recipe by ID.
-- **[8] Buscar receitas por dependencia**: Searches recipes by dependency.
-- **[0] Voltar ao menu principal**: Returns to the main menu.
+- **[1] List all categories**: Lists all unique categories.
+- **[2] List categories with subcategories**: Lists categories with their subcategories.
+- **[3] Get subcategories by category**: Searches subcategories for a specific category (requires input).
+- **[4] Get recipes by category**: Searches recipes by category (optional subcategory).
+- **[5] Get recipes by tag**: Searches recipes by tag.
+- **[6] Get recipes by name**: Searches recipes by partial name match.
+- **[7] Get recipe by ID**: Searches for a specific recipe by ID.
+- **[8] Get recipes by dependency**: Searches recipes by dependency.
+- **[0] Back to main menu**: Returns to the main menu.
 
 All query results are displayed in JSON format.
 

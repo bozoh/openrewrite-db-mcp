@@ -26,13 +26,13 @@ class WhenUserChoosesQueriesMenuTests:
             main.main()
 
         captured = capsys.readouterr()
-        assert "Menu de Consultas" in captured.out
-        assert "[1] Listar todas as categorias" in captured.out
-        assert "[2] Listar categorias com subcategorias" in captured.out
-        assert "[3] Buscar subcategorias por categoria" in captured.out
-        assert "[4] Buscar receitas por categoria" in captured.out
-        assert "[5] Buscar receitas por tag" in captured.out
-        assert "[6] Buscar receitas por nome" in captured.out
-        assert "[7] Buscar receita por ID" in captured.out
-        assert "[8] Buscar receitas por dependencia" in captured.out
-        assert "[0] Voltar ao menu principal" in captured.out
+        assert "Queries Menu" in captured.out
+        assert "[1] List all categories" in captured.out
+        assert "[2] List categories with subcategories" in captured.out
+        assert "[3] Get subcategories by category" in captured.out
+        assert "[4] Get recipes by category" in captured.out
+        assert "[5] Get recipes by tag" in captured.out
+        assert "[6] Get recipes by name" in captured.out
+        assert "[7] Get recipe by ID" in captured.out
+        assert "[8] Get recipes by dependency" in captured.out
+        assert "[0] Back to main menu" in captured.out

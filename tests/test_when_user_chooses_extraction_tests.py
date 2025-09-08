@@ -23,8 +23,8 @@ class WhenUserChoosesExtractionTests:
 
         captured = capsys.readouterr()
         assert "OpenRewrite Recipe Extractor" in captured.out
-        assert "[1] Extrair receitas" in captured.out
-        assert "[2] Consultar receitas" in captured.out
+        assert "[1] Extract recipes" in captured.out
+        assert "[2] Query recipes" in captured.out
 
     def test_that_choosing_extraction_should_call_recipe_extractor_and_return_success_code_test(self, mock_extractor, capsys, monkeypatch):
         inputs = iter(['1'])
@@ -61,7 +61,7 @@ class WhenUserChoosesExtractionTests:
 
         assert result == 1
         captured = capsys.readouterr()
-        assert "Operação cancelada pelo usuário" in captured.out
+        assert "Operation cancelled by user" in captured.out
 
     def test_that_extraction_should_handle_generic_exception_and_return_failure_test(self, capsys, monkeypatch):
         inputs = iter(['1'])
@@ -76,4 +76,4 @@ class WhenUserChoosesExtractionTests:
 
         assert result == 1
         captured = capsys.readouterr()
-        assert "Erro inesperado: Test error" in captured.out
+        assert "Unexpected error: Test error" in captured.out

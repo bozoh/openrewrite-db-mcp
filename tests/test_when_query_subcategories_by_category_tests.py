@@ -63,4 +63,4 @@ class WhenQuerySubcategoriesByCategoryTests:
             main.main()
 
         captured = capsys.readouterr()
-        assert "Erro ao executar consulta: Database error" in captured.out
+        assert "Error executing query: Database error" in captured.out

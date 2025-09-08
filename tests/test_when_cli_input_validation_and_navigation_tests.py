@@ -13,7 +13,7 @@ class WhenCliInputValidationAndNavigationTests:
             result = main.main()
 
         captured = capsys.readouterr()
-        assert "Opção inválida" in captured.out
+        assert "Invalid option" in captured.out
         assert result == 0  # Should continue to extraction
 
     def test_that_invalid_queries_menu_option_should_print_error_and_reprompt_test(self, capsys, monkeypatch):
@@ -24,7 +24,7 @@ class WhenCliInputValidationAndNavigationTests:
             main.main()
 
         captured = capsys.readouterr()
-        assert "Opção inválida" in captured.out
+        assert "Invalid option" in captured.out
 
     def test_that_user_can_exit_queries_menu_and_then_program_test(self, capsys, monkeypatch):
         inputs = iter(['2', '0'])
@@ -35,7 +35,7 @@ class WhenCliInputValidationAndNavigationTests:
 
         assert result == 0
         captured = capsys.readouterr()
-        assert "Voltando ao menu principal" in captured.out
+        assert "Returning to main menu" in captured.out
 
     def test_that_all_query_responses_should_be_json_serializable_test(self, capsys, monkeypatch):
         # Test multiple queries to ensure all return valid JSON
@@ -61,7 +61,7 @@ class WhenCliInputValidationAndNavigationTests:
         captured = capsys.readouterr()
         # Should not have any JSON parsing errors in the output
         # If there were errors, they would appear in stderr or as exceptions
-        assert "Erro ao executar consulta" not in captured.out
+        assert "Error executing query" not in captured.out
 
     def test_that_main_menu_exit_works_correctly_test(self, capsys, monkeypatch):
         inputs = iter(['0'])
@@ -71,4 +71,4 @@ class WhenCliInputValidationAndNavigationTests:
 
         assert result == 0
         captured = capsys.readouterr()
-        assert "Saindo" in captured.out
+        assert "Exiting" in captured.out
