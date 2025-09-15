@@ -69,7 +69,7 @@ class WhenUpdatingRecipesDatabaseFromMcpTests:
 
         # Verify the exact call with fixed values
         repo_mock.update_from_remote.assert_called_once_with(
-            "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json",
-            "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json.sha256",
+            "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/refs/heads/master/resource/db/recipes.json",
+            "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/refs/heads/master/resource/db/recipes.json.sha256",
             "resource/db"
         )
