@@ -10,32 +10,6 @@ from mcp.server import FastMCP
 from lib.recipe_repository import RecipeRepository
 from lib.mcp_service import RecipeMcpService
 
-
-class GetRecipeByIdArgs(BaseModel):
-    recipe_id: str = Field(description="The recipe ID to search for (md5/canonical), e.g., ebe22a8d0299cd2871cb0bb4d5339906")
-
-
-class GetRecipesByNameArgs(BaseModel):
-    name_query: str = Field(description="Case-insensitive substring to match in recipe names, e.g., 'spring' or 'jdbc'")
-
-
-class GetRecipesByTagArgs(BaseModel):
-    tag: str = Field(description="Exact tag to filter by, e.g., 'spring', 'java', 'database'")
-
-
-class GetRecipesByCategoryArgs(BaseModel):
-    category: str = Field(description="Category name to filter by, e.g., 'spring', 'java', 'testing'")
-    subcategory: Optional[str] = Field(default=None, description="Optional subcategory to further filter, e.g., 'jdbc', 'web', 'junit'")
-
-
-class GetRecipesByDependencyArgs(BaseModel):
-    dependency: str = Field(description="Partial dependency identifier, e.g., 'springframework', 'junit', 'org.springframework'")
-
-
-class GetSubcategoriesByCategoryArgs(BaseModel):
-    category: str = Field(description="Category name to list subcategories for, e.g., 'spring', 'java', 'testing'")
-
-
 def build_server() -> FastMCP:
     """
     Build and configure the MCP server with all recipe query tools.
@@ -51,98 +25,93 @@ def build_server() -> FastMCP:
     server = FastMCP("openrewrite-recipes")
 
     @server.tool()
-    async def get_recipe_by_id(args: GetRecipeByIdArgs) -> str:
+    async def get_recipe_by_id(
+        recipe_id: str = Field(description="The recipe ID to search for (md5/canonical), e.g., ebe22a8d0299cd2871cb0bb4d5339906")
+    ) -> str:
         """
         Get a single OpenRewrite recipe by its ID (md5 string).
 
         Searches for a specific recipe in the OpenRewrite recipes database using the provided ID.
-
-        Args:
-            recipe_id: The recipe ID to search for (e.g., "ebe22a8d0299cd2871cb0bb4d5339906")
 
         Returns:
             JSON string containing the recipe data or empty object {} if not found.
             Response format: {"name": "Recipe Name", "id": "recipe.id", "category": "category", ...}
             or {} if recipe not found
         """
-        result = service.get_recipe_by_id(args.recipe_id)
+        result = service.get_recipe_by_id(recipe_id)
         return str(result)
 
     @server.tool()
-    async def get_recipes_by_name(args: GetRecipesByNameArgs) -> str:
+    async def get_recipes_by_name(
+        name_query: str = Field(description="Case-insensitive substring to match in recipe names, e.g., 'NoGuavaPrimitiveAsList' or 'PreferJavaUtilObjectsEquals'")
+    ) -> str:
         """
         Get OpenRewrite recipes by partial name match (case-insensitive).
 
         Searches for recipes in the OpenRewrite recipes database where the name contains
         the provided query string (case-insensitive partial match).
 
-        Args:
-            name_query: The partial name to search for (e.g., "spring", "jdbc")
-
         Returns:
             JSON string containing a list of matching recipes or empty list [] if none found.
             Response format: [{"name": "Recipe Name", "id": "recipe.id", "category": "category", ...}, ...]
             or [] if no recipes match the query
         """
-        result = service.get_recipes_by_name(args.name_query)
+        result = service.get_recipes_by_name(name_query)
         return str(result)
 
     @server.tool()
-    async def get_recipes_by_tag(args: GetRecipesByTagArgs) -> str:
+    async def get_recipes_by_tag(
+        tag: str = Field(description="Exact tag to filter by, e.g., 'spring', 'java', 'database'")
+    ) -> str:
         """
         Get OpenRewrite recipes that contain a specific tag.
 
         Searches for recipes in the OpenRewrite recipes database that have the specified
         tag in their tags array (case-insensitive exact match).
 
-        Args:
-            tag: The tag to search for (e.g., "spring", "java", "database")
-
         Returns:
             JSON string containing a list of recipes with the specified tag or empty list [] if none found.
             Response format: [{"name": "Recipe Name", "id": "recipe.id", "tags": ["tag1", "tag2"], ...}, ...]
             or [] if no recipes contain the specified tag
         """
-        result = service.get_recipes_by_tag(args.tag)
+        result = service.get_recipes_by_tag(tag)
         return str(result)
 
     @server.tool()
-    async def get_recipes_by_category(args: GetRecipesByCategoryArgs) -> str:
+    async def get_recipes_by_category(
+        category: str = Field(description="Category name to filter by, e.g., 'spring', 'java', 'testing'"),
+        subcategory: Optional[str] = Field(default=None, description="Optional subcategory to further filter, e.g., 'jdbc', 'web', 'junit'")
+    ) -> str:
         """
         Get OpenRewrite recipes by category and optional subcategory.
 
         Searches for recipes in the OpenRewrite recipes database that belong to the specified
         category. Optionally filters further by subcategory if provided.
 
-        Args:
-            category: The category name to filter by (e.g., "spring", "java", "testing")
-            subcategory: Optional subcategory name to further filter (e.g., "jdbc", "web", "junit")
-
         Returns:
             JSON string containing a list of recipes in the specified category/subcategory or empty list [] if none found.
             Response format: [{"name": "Recipe Name", "id": "recipe.id", "category": "category", "sub-category": "subcategory", ...}, ...]
             or [] if no recipes match the criteria
         """
-        result = service.get_recipes_by_category(args.category, args.subcategory)
+        result = service.get_recipes_by_category(category, subcategory)
         return str(result)
 
     @server.tool()
-    async def get_recipes_by_dependency(args: GetRecipesByDependencyArgs) -> str:
+    async def get_recipes_by_dependency(
+        dependency: str = Field(description="Partial dependency identifier, e.g., 'rewrite-migrate-java', 'rewrite-migrate-jackson', 'rewrite-micronaut'")
+    ) -> str:
         """
         Get OpenRewrite recipes by dependency package name (partial match, case-insensitive).
 
         Searches for recipes in the OpenRewrite recipes database that have dependencies
         containing the provided string (case-insensitive partial match).
 
-        Args:
-            dependency: The dependency string to search for (e.g., "springframework", "junit", "org.springframework")
-
         Returns:
             JSON string containing a list of recipes with matching dependencies or empty list [] if none found.
             Response format: [{"name": "Recipe Name", "id": "recipe.id", "dependency": "dependency.string", ...}, ...]
             or [] if no recipes have matching dependencies
         """
-        result = service.get_recipes_by_dependency(args.dependency)
+        result = service.get_recipes_by_dependency(dependency)
         return str(result)
 
     @server.tool()
@@ -161,7 +130,9 @@ def build_server() -> FastMCP:
         return str(result)
 
     @server.tool()
-    async def get_subcategories_by_category(args: GetSubcategoriesByCategoryArgs) -> str:
+    async def get_subcategories_by_category(
+        category: str = Field(description="Category name to list subcategories for, e.g., 'spring', 'java', 'testing'")
+    ) -> str:
         """
         Get all subcategories for a specific category from the OpenRewrite recipes database.
 
@@ -176,7 +147,7 @@ def build_server() -> FastMCP:
             Response format: ["subcategory1", "subcategory2", "subcategory3", ...]
             or [] if category not found or has no subcategories
         """
-        result = service.get_subcategories_by_category(args.category)
+        result = service.get_subcategories_by_category(category)
         return str(result)
 
     @server.tool()

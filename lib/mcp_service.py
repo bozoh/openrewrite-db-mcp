@@ -2,8 +2,8 @@ from typing import List, Dict, Optional, Any
 from lib.recipe_repository import RecipeRepository
 
 # Fixed URLs for recipes database update
-JSON_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json"
-SHA256_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json.sha256"
+JSON_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/refs/heads/master/resource/db/recipes.json"
+SHA256_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/refs/heads/master/resource/db/recipes.json.sha256"
 DEST_DIR = "resource/db"
 
 

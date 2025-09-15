@@ -26,8 +26,8 @@
 - Pull changes from the remote repository regularly to stay up-to-date
 
 ### Restricions
-- You are forbbiden to push
-- You are forbbiden to create branches
+- You are forbbiden to push, only if i say so
+- You are forbbiden to create branches, only if i say so
 - You are forbbiden to delete branches
 - You are forbbiden to force push
 - You are forbbiden to merge branches
