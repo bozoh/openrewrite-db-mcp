@@ -18,6 +18,7 @@ The RecipeRepository class provides the following query methods:
 - **get_recipes_by_name(name_query)** - Search recipes by partial name match (case-insensitive)
 - **get_recipe_by_id(recipe_id)** - Get a single recipe by its ID
 - **get_recipes_by_dependency(dependency)** - Get recipes by dependency (partial match)
+- **update_recipes_database()** - Update the recipes database from remote URLs
 
 All methods return results in JSON format and handle edge cases gracefully.
 
@@ -136,6 +137,34 @@ uvx --from git+https://github.com/bozoh/openrewrite-db-mcp openrewrite-db-mcp
 uvx --from git+https://github.com/bozoh/openrewrite-db-mcp@develop openrewrite-db-mcp
 ```
 
+#### Running the MCP Server with uv (without uvx)
+
+If you prefer to use `uv` directly without `uvx`, you can run the MCP server in the following ways:
+
+##### Option 1: From local directory (cloned repository)
+```bash
+# Install dependencies
+uv sync
+
+# Run using the console script (recommended)
+uv run openrewrite-db-mcp
+
+# Or run directly with the module
+uv run -m mcp_server.main
+```
+
+##### Option 2: Install from GitHub repository and run
+```bash
+# Install the package from GitHub
+uv pip install "git+https://github.com/bozoh/openrewrite-db-mcp"
+
+# Or specify a specific branch/tag
+uv pip install "git+https://github.com/bozoh/openrewrite-db-mcp@develop"
+
+# Run the MCP server
+uv run openrewrite-db-mcp
+```
+
 ### MCP Server Features
 
 The MCP server provides the following tools:
@@ -151,6 +180,30 @@ The MCP server provides the following tools:
 - **update_recipes_database()** - Update the recipes database from fixed remote URLs
 
 All tools return results in JSON format and are designed to work seamlessly with AI assistants.
+
+### Updating the Recipes Database
+
+To update the recipes database with the latest data from the remote repository, use the `update_recipes_database` tool. This tool downloads the latest `recipes.json` and `recipes.json.sha256` files from the main branch of the OpenRewrite repository and saves them to the local database directory with SHA-256 verification.
+
+**Usage via MCP client:**
+- Call the `update_recipes_database` tool with no parameters.
+
+**Expected response on success:**
+```json
+{
+  "success": true,
+  "json_path": "resource/db/recipes.json",
+  "sha256_path": "resource/db/recipes.json.sha256"
+}
+```
+
+**Expected response on error:**
+```json
+{
+  "success": false,
+  "error": "error message"
+}
+```
 
 ## MCP Server Details
 
@@ -360,6 +413,34 @@ To use the MCP server with VSCode and AI assistants, configure it in your VSCode
       "openrewrite-db": {
         "command": "uvx",
         "args": ["--from", "git+https://github.com/bozoh/openrewrite-db-mcp@develop", "openrewrite-db-mcp"]
+      }
+    }
+  }
+}
+```
+
+#### Option 4: Local Configuration with uv (without uvx)
+```json
+{
+  "mcp": {
+    "servers": {
+      "openrewrite-db": {
+        "command": "uv",
+        "args": ["run", "-m", "mcp_server.main"]
+      }
+    }
+  }
+}
+```
+
+#### Option 5: Remote Configuration with uv (without uvx)
+```json
+{
+  "mcp": {
+    "servers": {
+      "openrewrite-db": {
+        "command": "uv",
+        "args": ["run", "openrewrite-db-mcp"]
       }
     }
   }
