@@ -267,6 +267,23 @@ class RecipeExtractor:
         with open(self.output_file, 'w', encoding='utf-8') as f:
             json.dump(self.recipes, f, indent=2, ensure_ascii=False)
 
+        # Generate SHA-256 hash file
+        self._write_sha256(self.output_file)
+
+    def _write_sha256(self, file_path: str) -> None:
+        """Generate and write SHA-256 hash file for the given file."""
+        sha256_hash = hashlib.sha256()
+
+        # Read file in chunks to handle large files efficiently
+        with open(file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+
+        # Write hash to .sha256 file
+        hash_file_path = file_path + ".sha256"
+        with open(hash_file_path, 'w', encoding='utf-8') as f:
+            f.write(sha256_hash.hexdigest() + '\n')
+
     def print_statistics(self) -> None:
         """Print extraction statistics."""
         total_recipes = len(self.recipes)
