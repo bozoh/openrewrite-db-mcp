@@ -172,6 +172,24 @@ def build_server() -> FastMCP:
         result = service.get_categories_with_subcategories()
         return str(result)
 
+    @server.tool()
+    async def update_recipes_database() -> str:
+        """
+        Update the OpenRewrite recipes database from fixed remote URLs.
+
+        Downloads the latest recipes.json and recipes.json.sha256 from the main branch
+        of the repository and saves them to the local database directory with SHA-256 verification.
+
+        This tool has no parameters - it uses fixed URLs and destination directory.
+
+        Returns:
+            JSON string containing the update result.
+            Response format: {"success": true, "json_path": "path/to/recipes.json", "sha256_path": "path/to/recipes.json.sha256"}
+            or {"success": false, "error": "error message"}
+        """
+        result = service.update_recipes_database_fixed()
+        return str(result)
+
     return server
 
 

@@ -1,6 +1,11 @@
 from typing import List, Dict, Optional, Any
 from lib.recipe_repository import RecipeRepository
 
+# Fixed URLs for recipes database update
+JSON_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json"
+SHA256_URL = "https://raw.githubusercontent.com/bozoh/openrewrite-db-mcp/main/resource/db/recipes.json.sha256"
+DEST_DIR = "resource/db"
+
 
 class RecipeMcpService:
     """
@@ -149,3 +154,36 @@ class RecipeMcpService:
             return self._repository.get_categories_with_subcategories()
         except Exception:
             return []
+
+    def update_recipes_database_fixed(self) -> Dict[str, Any]:
+        """
+        Update the recipes database from fixed remote URLs (no parameters).
+
+        Uses hardcoded URLs for recipes.json and recipes.json.sha256 from the main branch
+        of the repository, and saves to the fixed destination directory.
+
+        Returns:
+            Dict with success status and paths or error message
+        """
+        try:
+            json_path = self._repository.update_from_remote(JSON_URL, SHA256_URL, DEST_DIR)
+            return {
+                "success": True,
+                "json_path": json_path,
+                "sha256_path": json_path + ".sha256"
+            }
+        except ValueError as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+        except RuntimeError as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}"
+            }

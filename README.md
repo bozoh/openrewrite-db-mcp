@@ -148,6 +148,7 @@ The MCP server provides the following tools:
 - **get_all_categories()** - Get all unique categories
 - **get_subcategories_by_category(category)** - Get subcategories for a specific category
 - **get_categories_with_subcategories()** - Get all categories with their subcategories
+- **update_recipes_database()** - Update the recipes database from fixed remote URLs
 
 All tools return results in JSON format and are designed to work seamlessly with AI assistants.
 
@@ -294,6 +295,29 @@ Get all categories with their respective subcategories from the OpenRewrite reci
   },
   ...
 ]
+```
+
+#### 9. `update_recipes_database`
+Update the OpenRewrite recipes database from fixed remote URLs.
+
+Downloads the latest recipes.json and recipes.json.sha256 from the main branch of the repository and saves them to the local database directory with SHA-256 verification.
+
+**Parameters:** None (uses fixed URLs and destination directory)
+
+**Response format:**
+```json
+{
+  "success": true,
+  "json_path": "resource/db/recipes.json",
+  "sha256_path": "resource/db/recipes.json.sha256"
+}
+```
+Or on error:
+```json
+{
+  "success": false,
+  "error": "error message"
+}
 ```
 
 ### VSCode Configuration
