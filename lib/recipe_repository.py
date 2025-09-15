@@ -1,7 +1,10 @@
 import json
 import os
+import hashlib
+import tempfile
 from typing import List, Dict, Optional, Any, Iterator
 import ijson
+import requests
 from jsonpath_ng import parse as jsonpath_parse
 
 
@@ -232,3 +235,69 @@ class RecipeRepository:
                 results.append(recipe)
 
         return results
+
+    def update_from_remote(self, json_url: str, sha256_url: str, dest_dir: str = "resource/db") -> str:
+        """
+        Update the recipes database by downloading from remote URLs with SHA-256 verification.
+
+        Downloads the SHA-256 hash file first, then the JSON file, verifies the hash matches,
+        and saves both files to the destination directory if verification succeeds.
+
+        Args:
+            json_url: URL to download the recipes.json file from
+            sha256_url: URL to download the recipes.json.sha256 file from
+            dest_dir: Directory to save the files to (default: "resource/db")
+
+        Returns:
+            Path to the saved recipes.json file
+
+        Raises:
+            ValueError: If SHA-256 hash verification fails
+            RuntimeError: If network download fails
+        """
+        try:
+            # Download SHA-256 file first
+            sha256_resp = requests.get(sha256_url, timeout=15)
+            sha256_resp.raise_for_status()
+
+            # Extract expected hash (handle formats like "hash" or "hash filename")
+            expected_hash = sha256_resp.text.strip().split()[0].lower()
+
+            # Download JSON file
+            json_resp = requests.get(json_url, timeout=15)
+            json_resp.raise_for_status()
+            json_bytes = json_resp.content
+
+            # Compute actual SHA-256 of downloaded JSON
+            actual_hash = hashlib.sha256(json_bytes).hexdigest()
+
+            # Verify hash matches
+            if actual_hash != expected_hash:
+                raise ValueError(f"SHA-256 hash mismatch: expected {expected_hash}, got {actual_hash}")
+
+            # Ensure destination directory exists
+            os.makedirs(dest_dir, exist_ok=True)
+
+            # Save files atomically using temporary files
+            json_path = os.path.join(dest_dir, "recipes.json")
+            sha256_path = os.path.join(dest_dir, "recipes.json.sha256")
+
+            # Write JSON file
+            with tempfile.NamedTemporaryFile(mode='wb', dir=dest_dir, delete=False) as tmp_json:
+                tmp_json.write(json_bytes)
+                tmp_json_path = tmp_json.name
+
+            os.replace(tmp_json_path, json_path)
+
+            # Write SHA-256 file (preserve remote content format)
+            sha256_content = sha256_resp.text.rstrip() + '\n'  # Ensure single trailing newline
+            with tempfile.NamedTemporaryFile(mode='w', dir=dest_dir, delete=False, encoding='utf-8') as tmp_sha256:
+                tmp_sha256.write(sha256_content)
+                tmp_sha256_path = tmp_sha256.name
+
+            os.replace(tmp_sha256_path, sha256_path)
+
+            return json_path
+
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Failed to download recipes database: {e}") from e
